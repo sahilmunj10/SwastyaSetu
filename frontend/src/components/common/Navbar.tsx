@@ -44,9 +44,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenVoice }) => {
     if (!user) {
       return [
         { label: 'Home', path: '/', icon: HeartHandshake },
-        { label: "Meena's Demo Journey", path: '/meena-journey', icon: Activity },
-        { label: 'Explore Services', path: '/#services', icon: Layers },
-        { label: 'Login', path: '/login', icon: UserIcon }
+        { label: 'Healthcare Services', path: '/#services', icon: Layers },
+        { label: 'Sign In', path: '/login', icon: UserIcon }
       ];
     }
 
@@ -108,7 +107,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenVoice }) => {
 
   return (
     <>
-      <header className="bg-gov-navy text-white shadow-lg border-b border-gov-blue/50 sticky top-8 z-40">
+      <header className="bg-gov-navy text-white shadow-lg border-b border-gov-blue/50 sticky top-0 z-40">
         
         {/* Main Navbar */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -243,12 +242,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenVoice }) => {
                   )}
                 </div>
               ) : (
-                <Link
-                  to="/login"
-                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition shadow"
-                >
-                  Sign In
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link
+                    to="/login"
+                    className="px-3 py-1.5 bg-gov-blue hover:bg-blue-800 text-white font-bold rounded-lg text-xs transition border border-white/20"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition shadow hidden sm:inline-block"
+                  >
+                    Register
+                  </Link>
+                </div>
               )}
 
               {/* Mobile menu toggle */}

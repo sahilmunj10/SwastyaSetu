@@ -136,16 +136,16 @@ export const AshaDashboard: React.FC = () => {
               Frontline Healthcare Workstation
             </span>
             <span className="text-xs text-slate-300 font-medium">
-              Kalyan Rural Cluster (Gandhre, Titwala, Murbad Road)
+              {user?.facilityName || 'Kalyan Rural Cluster'} • ASHA Portal
             </span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-black">
-            Welcome, Sunita Gaikwad (ASHA Worker)
+            Welcome, {user?.name || 'Frontline Health Worker'} (ASHA Worker)
           </h1>
 
           <p className="text-xs text-slate-300">
-            Assigned Facility: <strong className="text-white">PHC Kalyan Rural</strong> • Registered Citizens: <strong className="text-white">{patients.length}</strong>
+            Assigned Facility: <strong className="text-white">{user?.facilityName || 'PHC Kalyan Rural'}</strong> • Registered Citizens: <strong className="text-white">{patients.length}</strong>
           </p>
         </div>
 
@@ -161,8 +161,11 @@ export const AshaDashboard: React.FC = () => {
 
           <button
             onClick={() => {
-              const meena = patients.find(p => p.patientId === 'MH-THN-00101') || patients[0];
-              if (meena) handleOpenTriage(meena);
+              if (patients.length > 0) {
+                handleOpenTriage(patients[0]);
+              } else {
+                setRegisterOpen(true);
+              }
             }}
             className="px-4 py-2.5 bg-gov-emerald hover:bg-emerald-600 text-white font-bold rounded-xl text-xs shadow-md transition flex items-center gap-2"
           >
@@ -322,7 +325,15 @@ export const AshaDashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {filteredPatients.map(p => {
+              {filteredPatients.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-slate-500 text-xs">
+                    <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <div className="font-semibold text-slate-700">No citizens found</div>
+                    <p className="text-[11px] text-slate-400">Click "Register Citizen" to record a new patient into the registry.</p>
+                  </td>
+                </tr>
+              ) : filteredPatients.map(p => {
                 const latestVital = p.vitals && p.vitals.length > 0 ? p.vitals[0] : null;
                 const isHighBp = (latestVital?.systolicBp || 0) >= 140;
 

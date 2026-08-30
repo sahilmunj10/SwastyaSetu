@@ -98,10 +98,12 @@ export const PharmacyDashboard: React.FC = () => {
             <span className="text-xs font-bold bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded">
               Public Health Pharmacy & Drug Inventory
             </span>
-            <span className="text-xs text-slate-300 font-medium">PHC Kalyan Essential Drugs Store</span>
+            <span className="text-xs text-slate-300 font-medium">
+              {user?.facilityName || 'Essential Drugs Store'}
+            </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black">
-            Welcome, Milind Deshmukh (Pharmacist Officer)
+            Welcome, {user?.name || 'Pharmacist'} (Pharmacy Officer)
           </h1>
           <p className="text-xs text-slate-300">
             Total Monitored Drug SKUs: <strong className="text-white">{medicines.length}</strong> • Low-Stock Warnings: <strong className="text-amber-300">{lowStockItems.length}</strong>
@@ -193,7 +195,15 @@ export const PharmacyDashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {filteredMedicines.map(m => (
+              {filteredMedicines.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-slate-500 text-xs">
+                    <Pill className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <div className="font-semibold text-slate-700">No medicines found in inventory</div>
+                    <p className="text-[11px] text-slate-400">Add stock items from the central pharmacy warehouse indent.</p>
+                  </td>
+                </tr>
+              ) : filteredMedicines.map(m => (
                 <tr key={m.id} className="hover:bg-slate-50/80 transition">
                   
                   <td className="p-3.5">

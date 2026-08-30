@@ -61,10 +61,12 @@ export const FacilityAdminDashboard: React.FC = () => {
             <span className="text-xs font-bold bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded">
               Facility Administration & Operations
             </span>
-            <span className="text-xs text-slate-300 font-medium">PHC Kalyan Rural Hub</span>
+            <span className="text-xs text-slate-300 font-medium">
+              {user?.facilityName || 'PHC Kalyan Rural Hub'}
+            </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black">
-            Welcome, Kavita Chavan (Facility Superintendent)
+            Welcome, {user?.name || 'Facility Administrator'} (Facility Admin)
           </h1>
           <p className="text-xs text-slate-300">
             Active Doctors: <strong className="text-white">4 On Duty</strong> • Bed Capacity: <strong className="text-white">15 (8 Occupied)</strong> • Operational OPD Suites: <strong className="text-white">3</strong>
@@ -123,7 +125,15 @@ export const FacilityAdminDashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {appointments.map(a => (
+              {appointments.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-slate-500 text-xs">
+                    <Calendar className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <div className="font-semibold text-slate-700">No appointments scheduled today</div>
+                    <p className="text-[11px] text-slate-400">OPD consultations booked by frontline workers will appear here.</p>
+                  </td>
+                </tr>
+              ) : appointments.map(a => (
                 <tr key={a.id} className="hover:bg-slate-50/80 transition">
                   <td className="p-3.5">
                     <span className="font-mono font-bold text-slate-900">{a.tokenNumber}</span> • {a.patient?.name}

@@ -5,6 +5,7 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import { OfflineSyncProvider } from './contexts/OfflineSyncContext';
 import { Navbar } from './components/common/Navbar';
 import { DemoSwitcherBar } from './components/common/DemoSwitcherBar';
+import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { AiAssistantDrawer } from './components/ai/AiAssistantDrawer';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
@@ -25,7 +26,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      {/* Top Testing & Simulation Bar with Collapse Toggle */}
+      {/* Top Testing & Simulation Bar (Only visible when user is authenticated) */}
       <DemoSwitcherBar />
 
       {/* Main Government Health Navigation Bar */}
@@ -34,49 +35,215 @@ const AppContent: React.FC = () => {
       {/* Main Route Content */}
       <main className="flex-1">
         <Routes>
+          {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<LoginPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/meena-journey" element={<MeenaDemoStoryPage />} />
-          <Route path="/teleconsult" element={<TeleconsultationPage />} />
 
-          {/* Patient Routes */}
-          <Route path="/patient" element={<PatientDashboard />} />
-          <Route path="/patient/appointments" element={<PatientDashboard />} />
-          <Route path="/patient/referrals" element={<PatientDashboard />} />
-          <Route path="/patient/medicines" element={<PatientDashboard />} />
+          {/* User Profile Route (Protected) */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* ASHA Frontline Worker Routes */}
-          <Route path="/asha" element={<AshaDashboard />} />
-          <Route path="/asha/patients" element={<AshaDashboard />} />
-          <Route path="/asha/appointments" element={<AshaDashboard />} />
-          <Route path="/asha/followups" element={<AshaDashboard />} />
+          {/* Teleconsultation Route (Protected) */}
+          <Route
+            path="/teleconsult"
+            element={
+              <ProtectedRoute allowedRoles={['DOCTOR', 'PATIENT', 'ASHA']}>
+                <TeleconsultationPage />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* Doctor Routes */}
-          <Route path="/doctor" element={<DoctorDashboard />} />
-          <Route path="/doctor/queue" element={<DoctorDashboard />} />
-          <Route path="/doctor/referrals" element={<DoctorDashboard />} />
+          {/* Patient Routes (Protected) */}
+          <Route
+            path="/patient"
+            element={
+              <ProtectedRoute allowedRoles={['PATIENT']}>
+                <PatientDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/patient/appointments"
+            element={
+              <ProtectedRoute allowedRoles={['PATIENT']}>
+                <PatientDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/patient/referrals"
+            element={
+              <ProtectedRoute allowedRoles={['PATIENT']}>
+                <PatientDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/patient/medicines"
+            element={
+              <ProtectedRoute allowedRoles={['PATIENT']}>
+                <PatientDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* Diagnostic Lab Routes */}
-          <Route path="/diagnostics" element={<DiagnosticsDashboard />} />
-          <Route path="/diagnostics/catalog" element={<DiagnosticsDashboard />} />
+          {/* ASHA Frontline Worker Routes (Protected) */}
+          <Route
+            path="/asha"
+            element={
+              <ProtectedRoute allowedRoles={['ASHA']}>
+                <AshaDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/asha/patients"
+            element={
+              <ProtectedRoute allowedRoles={['ASHA']}>
+                <AshaDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/asha/appointments"
+            element={
+              <ProtectedRoute allowedRoles={['ASHA']}>
+                <AshaDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/asha/followups"
+            element={
+              <ProtectedRoute allowedRoles={['ASHA']}>
+                <AshaDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* Pharmacy Routes */}
-          <Route path="/pharmacy" element={<PharmacyDashboard />} />
-          <Route path="/pharmacy/search" element={<PharmacyDashboard />} />
+          {/* Doctor Routes (Protected) */}
+          <Route
+            path="/doctor"
+            element={
+              <ProtectedRoute allowedRoles={['DOCTOR']}>
+                <DoctorDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/doctor/queue"
+            element={
+              <ProtectedRoute allowedRoles={['DOCTOR']}>
+                <DoctorDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/doctor/referrals"
+            element={
+              <ProtectedRoute allowedRoles={['DOCTOR']}>
+                <DoctorDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* Facility Admin Routes */}
-          <Route path="/admin" element={<FacilityAdminDashboard />} />
-          <Route path="/admin/queues" element={<FacilityAdminDashboard />} />
+          {/* Diagnostic Lab Routes (Protected) */}
+          <Route
+            path="/diagnostics"
+            element={
+              <ProtectedRoute allowedRoles={['LAB']}>
+                <DiagnosticsDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/diagnostics/catalog"
+            element={
+              <ProtectedRoute allowedRoles={['LAB']}>
+                <DiagnosticsDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* District Officer Routes */}
-          <Route path="/district" element={<DistrictOfficerDashboard />} />
-          <Route path="/district/map" element={<DistrictOfficerDashboard />} />
-          <Route path="/district/quality" element={<DistrictOfficerDashboard />} />
+          {/* Pharmacy Routes (Protected) */}
+          <Route
+            path="/pharmacy"
+            element={
+              <ProtectedRoute allowedRoles={['PHARMACY']}>
+                <PharmacyDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pharmacy/search"
+            element={
+              <ProtectedRoute allowedRoles={['PHARMACY']}>
+                <PharmacyDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* Audit Logs */}
-          <Route path="/audit-logs" element={<AuditLogsPage />} />
+          {/* Facility Admin Routes (Protected) */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <FacilityAdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/queues"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <FacilityAdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* District Officer Routes (Protected) */}
+          <Route
+            path="/district"
+            element={
+              <ProtectedRoute allowedRoles={['DISTRICT_OFFICER']}>
+                <DistrictOfficerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/district/map"
+            element={
+              <ProtectedRoute allowedRoles={['DISTRICT_OFFICER']}>
+                <DistrictOfficerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/district/quality"
+            element={
+              <ProtectedRoute allowedRoles={['DISTRICT_OFFICER']}>
+                <DistrictOfficerDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Audit Logs (Protected) */}
+          <Route
+            path="/audit-logs"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN', 'DISTRICT_OFFICER']}>
+                <AuditLogsPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

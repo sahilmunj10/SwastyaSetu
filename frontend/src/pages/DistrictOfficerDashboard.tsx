@@ -69,10 +69,10 @@ export const DistrictOfficerDashboard: React.FC = () => {
             <span className="text-xs font-bold bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded">
               State & District Health Intelligence Suite
             </span>
-            <span className="text-xs text-slate-300 font-medium">Maharashtra State Innovation Society • Thane District</span>
+            <span className="text-xs text-slate-300 font-medium">Maharashtra State Health Services • District Portal</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black">
-            Welcome, Dr. Sandeep Mane (District Health Officer)
+            Welcome, {user?.name || 'District Health Officer'} (DHO)
           </h1>
           <p className="text-xs text-slate-300">
             Monitoring <strong className="text-white">{facilityScorecards.length} Public Health Facilities</strong> spanning PHCs, Rural Hospitals, and District Civil Hospital.

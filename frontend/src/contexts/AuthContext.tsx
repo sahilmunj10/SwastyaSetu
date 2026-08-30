@@ -51,14 +51,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         })
         .finally(() => setLoading(false));
     } else {
-      // If demo role was active previously
-      const demoRole = localStorage.getItem('swasthya_demo_role');
-      if (demoRole) {
-        switchRole(demoRole as UserRole).finally(() => setLoading(false));
-      } else {
-        // Start as ASHA worker by default for smooth initial viewing
-        switchRole('ASHA').finally(() => setLoading(false));
-      }
+      // Unauthenticated initial state: user must sign in or register
+      setUser(null);
+      setToken(null);
+      setLoading(false);
     }
   }, []);
 

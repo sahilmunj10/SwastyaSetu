@@ -13,6 +13,11 @@ export const DemoSwitcherBar: React.FC = () => {
 
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  // If user is not authenticated, do not show simulation / demo switcher bar
+  if (!user) {
+    return null;
+  }
+
   const roles: { role: UserRole; label: string; name: string; icon: string }[] = [
     { role: 'PATIENT', label: 'Patient', name: 'Meena', icon: '👤' },
     { role: 'ASHA', label: 'ASHA Worker', name: 'Sunita', icon: '🩺' },

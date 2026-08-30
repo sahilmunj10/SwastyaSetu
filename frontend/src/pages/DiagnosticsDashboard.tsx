@@ -95,10 +95,12 @@ export const DiagnosticsDashboard: React.FC = () => {
             <span className="text-xs font-bold bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded">
               Diagnostic Pathology & Imaging Lab
             </span>
-            <span className="text-xs text-slate-300 font-medium">PHC Kalyan Clinical Lab Suite</span>
+            <span className="text-xs text-slate-300 font-medium">
+              {user?.facilityName || 'Clinical Laboratory Suite'}
+            </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black">
-            Welcome, Prakash Shinde (Senior Lab Technician)
+            Welcome, {user?.name || 'Lab Staff'} (Diagnostic Lab)
           </h1>
           <p className="text-xs text-slate-300">
             Pending Orders: <strong className="text-white">{requests.filter(r => r.status !== 'VERIFIED').length}</strong> • Verified Reports Today: <strong className="text-white">{requests.filter(r => r.status === 'VERIFIED').length}</strong>
@@ -132,7 +134,15 @@ export const DiagnosticsDashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {requests.map(d => (
+              {requests.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-slate-500 text-xs">
+                    <FlaskConical className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <div className="font-semibold text-slate-700">No diagnostic orders in queue</div>
+                    <p className="text-[11px] text-slate-400">Tests ordered by medical officers will appear here for sample processing.</p>
+                  </td>
+                </tr>
+              ) : requests.map(d => (
                 <tr key={d.id} className="hover:bg-slate-50/80 transition">
                   
                   <td className="p-3.5">

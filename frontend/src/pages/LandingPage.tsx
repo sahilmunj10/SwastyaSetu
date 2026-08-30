@@ -28,6 +28,10 @@ export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleLaunchRole = async (role: any, path: string) => {
+    if (!user) {
+      navigate(`/login?role=${role}`);
+      return;
+    }
     await switchRole(role);
     navigate(path);
   };
@@ -81,21 +85,29 @@ export const LandingPage: React.FC = () => {
 
           {/* Master CTA Buttons */}
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-            <button
-              onClick={() => navigate('/meena-journey')}
-              className="px-6 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-xl text-sm shadow-xl shadow-amber-950/40 flex items-center gap-2.5 transition transform hover:-translate-y-0.5"
-            >
-              <Play className="w-5 h-5 fill-current" />
-              <span>Experience Meena's Healthcare Journey (Master Demo)</span>
-            </button>
-
             <Link
               to="/login"
+              className="px-6 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-xl text-sm shadow-xl shadow-amber-950/40 flex items-center gap-2.5 transition transform hover:-translate-y-0.5"
+            >
+              <HeartHandshake className="w-5 h-5" />
+              <span>Access Healthcare Portal</span>
+            </Link>
+
+            <Link
+              to="/signup"
               className="px-6 py-3.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-sm border border-white/30 backdrop-blur-sm transition flex items-center gap-2"
             >
-              <span>Login to Role Dashboards</span>
+              <span>Register with ABHA Health ID</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
+
+            <button
+              onClick={() => navigate('/meena-journey')}
+              className="px-5 py-3.5 bg-gov-blue/60 hover:bg-gov-blue text-amber-300 font-bold rounded-xl text-xs border border-amber-400/30 backdrop-blur-sm transition flex items-center gap-2"
+            >
+              <Play className="w-4 h-4 fill-current" />
+              <span>Watch Continuum Simulation</span>
+            </button>
           </div>
 
           {/* Key Metric Highlights */}
@@ -194,20 +206,20 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Role Workstation Direct Launcher for Hackathon Judges */}
+      {/* Role Workstation Direct Launcher */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="bg-gradient-to-r from-gov-navy via-slate-900 to-gov-navy text-white rounded-3xl p-6 sm:p-10 shadow-xl space-y-6 border border-slate-700">
           
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] bg-amber-400 text-slate-950 font-bold px-2 py-0.5 rounded">
-                  JUDGING DEMO
+                <span className="text-[10px] bg-gov-emerald text-white font-bold px-2 py-0.5 rounded">
+                  AUTHENTICATED ACCESS
                 </span>
-                <h3 className="text-xl font-bold">Explore All 7 Role Portals Instantly</h3>
+                <h3 className="text-xl font-bold">Public Healthcare Workstations & Portals</h3>
               </div>
               <p className="text-xs text-slate-300 mt-1">
-                Click any persona below to launch the role-specific dashboard with pre-seeded demo state:
+                Access your role-specific dashboard with secure login or authenticate using ABHA Health ID:
               </p>
             </div>
 
@@ -216,7 +228,7 @@ export const LandingPage: React.FC = () => {
               className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow transition flex items-center gap-1.5"
             >
               <Play className="w-4 h-4 fill-current" />
-              <span>Guided Journey Mode</span>
+              <span>Interactive Journey Demo</span>
             </button>
           </div>
 

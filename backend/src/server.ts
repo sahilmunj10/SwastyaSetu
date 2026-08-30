@@ -32,6 +32,22 @@ app.get('/health', (req: Request, res: Response) => {
 // Mount API routes
 app.use('/api', apiRouter);
 
+// 404 Handler
+app.use((req: Request, res: Response) => {
+  res.status(404).json({
+    error: 'Endpoint not found',
+    path: req.originalUrl
+  });
+});
+
+// Global Error Handler
+app.use((err: any, req: Request, res: Response, next: any) => {
+  console.error('Unhandled server error:', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal server error occurred in healthcare gateway.'
+  });
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`=======================================================`);

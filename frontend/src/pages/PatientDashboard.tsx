@@ -19,7 +19,9 @@ import {
   MapPin, 
   ArrowRight,
   PhoneCall,
-  FileText
+  FileText,
+  UserCheck,
+  AlertCircle
 } from 'lucide-react';
 import { ReferralTrackerStepper } from '../components/patient/ReferralTrackerStepper';
 import { EmergencyModal } from '../components/common/EmergencyModal';
@@ -34,6 +36,7 @@ export const PatientDashboard: React.FC = () => {
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [referral, setReferral] = useState<Referral | null>(null);
   const [diagnostics, setDiagnostics] = useState<DiagnosticRequest[]>([]);
+  const [prescriptions, setPrescriptions] = useState<any[]>([]);
   const [medicineQuery, setMedicineQuery] = useState('');
   const [medicineResults, setMedicineResults] = useState<any[]>([]);
   const [searchingMed, setSearchingMed] = useState(false);
@@ -43,26 +46,53 @@ export const PatientDashboard: React.FC = () => {
   const loadPatientData = async () => {
     try {
       const patientsRes = await api.getPatients();
-      const meena = patientsRes.patients.find(p => p.patientId === 'MH-THN-00101') || patientsRes.patients[0];
+      const allPatients = patientsRes.patients || [];
+
+      // Attempt to match logged in user's profile
+      let targetPatient = null;
+      if (user) {
+        targetPatient = allPatients.find(p => 
+          (user.phone && p.phone === user.phone) ||
+          (user.name && p.name.trim().toLowerCase() === user.name.trim().toLowerCase())
+        );
+      }
+
+      // If not matched, fallback to first patient in demo dataset
+      if (!targetPatient && allPatients.length > 0) {
+        targetPatient = allPatients.find(p => p.patientId === 'MH-THN-00101') || allPatients[0];
+      }
       
-      if (meena) {
-        const detailRes = await api.getPatientById(meena.id);
-        setPatient(detailRes.patient);
+      if (targetPatient) {
+        const detailRes = await api.getPatientById(targetPatient.id);
+        const pData = detailRes.patient;
+        setPatient(pData);
         
-        if (detailRes.patient.appointments && detailRes.patient.appointments.length > 0) {
-          setAppointment(detailRes.patient.appointments[0]);
+        if (pData.appointments && pData.appointments.length > 0) {
+          setAppointment(pData.appointments[0]);
+        } else {
+          setAppointment(null);
         }
 
-        if (detailRes.patient.referrals && detailRes.patient.referrals.length > 0) {
-          setReferral(detailRes.patient.referrals[0]);
+        if (pData.referrals && pData.referrals.length > 0) {
+          setReferral(pData.referrals[0]);
+        } else {
+          setReferral(null);
         }
 
-        if (detailRes.patient.diagnosticRequests) {
-          setDiagnostics(detailRes.patient.diagnosticRequests);
+        if (pData.diagnosticRequests) {
+          setDiagnostics(pData.diagnosticRequests);
+        } else {
+          setDiagnostics([]);
+        }
+
+        if (pData.prescriptions) {
+          setPrescriptions(pData.prescriptions);
+        } else {
+          setPrescriptions([]);
         }
       }
     } catch (err) {
-      console.error(err);
+      console.error('Error loading patient longitudinal profile:', err);
     }
   };
 
@@ -80,7 +110,7 @@ export const PatientDashboard: React.FC = () => {
     }, 6000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
   const handleSearchMedicine = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,8 +128,9 @@ export const PatientDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="p-12 text-center text-xs text-slate-500">
-        Loading patient longitudinal profile...
+      <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-3 p-6 text-slate-500 text-xs">
+        <div className="w-10 h-10 border-4 border-gov-navy border-t-transparent rounded-full animate-spin" />
+        <p className="font-semibold">Loading patient longitudinal health profile...</p>
       </div>
     );
   }
@@ -107,6 +138,8 @@ export const PatientDashboard: React.FC = () => {
   const latestVital = patient?.vitals && patient.vitals.length > 0
     ? patient.vitals[patient.vitals.length - 1]
     : null;
+
+  const activePrescription = prescriptions.length > 0 ? prescriptions[0] : null;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6 text-slate-900">
@@ -117,21 +150,21 @@ export const PatientDashboard: React.FC = () => {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="text-xs font-mono font-bold bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded">
-              ABHA: {user?.abhaId || '91-4432-8819-2041'}
+              ABHA: {user?.abhaId || patient?.patientId || '91-4432-8819-2041'}
             </span>
             {patient?.pregnancyStatus && (
               <span className="text-xs font-bold bg-pink-500/20 text-pink-300 border border-pink-500/40 px-2.5 py-0.5 rounded-full">
-                🤰 ANC High-Risk (28 Weeks)
+                🤰 ANC High-Risk ({patient.gestationalWeeks || 28} Weeks)
               </span>
             )}
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-black">
-            Good morning, {patient?.name || 'Meena Patil'}
+            Welcome, {user?.name || patient?.name || 'Citizen'}
           </h1>
           
           <p className="text-xs text-slate-300">
-            Village: <strong className="text-white">{patient?.village}</strong> • Registered Facility: <strong className="text-white">PHC Kalyan Rural</strong> • Assigned ASHA: <strong className="text-white">Sunita Gaikwad</strong>
+            Village: <strong className="text-white">{patient?.village || 'Kalyan Rural'}</strong> • Primary Facility: <strong className="text-white">{user?.facilityName || patient?.facility?.name || 'PHC Kalyan Rural'}</strong> • Health ID: <strong className="text-white">{patient?.patientId || user?.abhaId || 'Active'}</strong>
           </p>
         </div>
 
@@ -157,12 +190,29 @@ export const PatientDashboard: React.FC = () => {
             <span className="font-semibold">Blood Pressure</span>
             <Heart className="w-4 h-4 text-red-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-amber-600 font-mono">
-            {latestVital?.systolicBp || 152}/{latestVital?.diastolicBp || 96} <span className="text-xs text-slate-400 font-normal">mmHg</span>
-          </div>
-          <div className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 inline-block">
-            Elevated • Under Protocol
-          </div>
+          {latestVital?.systolicBp && latestVital?.diastolicBp ? (
+            <>
+              <div className="text-xl sm:text-2xl font-black text-amber-600 font-mono">
+                {latestVital.systolicBp}/{latestVital.diastolicBp} <span className="text-xs text-slate-400 font-normal">mmHg</span>
+              </div>
+              <div className={`text-[10px] font-bold px-2 py-0.5 rounded border inline-block ${
+                latestVital.systolicBp >= 140
+                  ? 'text-amber-700 bg-amber-50 border-amber-200'
+                  : 'text-emerald-700 bg-emerald-50 border-emerald-200'
+              }`}>
+                {latestVital.systolicBp >= 140 ? 'Elevated • Monitored' : 'Normal Range'}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-sm font-bold text-slate-400 font-mono py-1">
+                Not Recorded
+              </div>
+              <div className="text-[10px] text-slate-400">
+                Visit ASHA / PHC
+              </div>
+            </>
+          )}
         </div>
 
         {/* Blood Glucose */}
@@ -171,12 +221,25 @@ export const PatientDashboard: React.FC = () => {
             <span className="font-semibold">Blood Glucose</span>
             <Droplet className="w-4 h-4 text-purple-600" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-900 font-mono">
-            {latestVital?.bloodGlucose || 118} <span className="text-xs text-slate-400 font-normal">mg/dL</span>
-          </div>
-          <div className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block">
-            Normal Fasting
-          </div>
+          {latestVital?.bloodGlucose ? (
+            <>
+              <div className="text-xl sm:text-2xl font-black text-slate-900 font-mono">
+                {latestVital.bloodGlucose} <span className="text-xs text-slate-400 font-normal">mg/dL</span>
+              </div>
+              <div className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block">
+                Fasting Level
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-sm font-bold text-slate-400 font-mono py-1">
+                Not Recorded
+              </div>
+              <div className="text-[10px] text-slate-400">
+                Routine Screening
+              </div>
+            </>
+          )}
         </div>
 
         {/* SpO2 Level */}
@@ -185,12 +248,25 @@ export const PatientDashboard: React.FC = () => {
             <span className="font-semibold">SpO2 Oxygen</span>
             <Activity className="w-4 h-4 text-blue-600" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-900 font-mono">
-            {latestVital?.spo2 || 97}%
-          </div>
-          <div className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block">
-            Optimal
-          </div>
+          {latestVital?.spo2 ? (
+            <>
+              <div className="text-xl sm:text-2xl font-black text-slate-900 font-mono">
+                {latestVital.spo2}%
+              </div>
+              <div className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block">
+                Optimal
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-sm font-bold text-slate-400 font-mono py-1">
+                Not Recorded
+              </div>
+              <div className="text-[10px] text-slate-400">
+                Pulse Oximetry
+              </div>
+            </>
+          )}
         </div>
 
         {/* Current Medications */}
@@ -199,12 +275,25 @@ export const PatientDashboard: React.FC = () => {
             <span className="font-semibold">Active Prescription</span>
             <Pill className="w-4 h-4 text-emerald-600" />
           </div>
-          <div className="text-xs font-bold text-slate-900">
-            Tab Labetalol 100mg
-          </div>
-          <div className="text-[10px] text-slate-500">
-            1-0-1 (Twice Daily) • 7 Days
-          </div>
+          {activePrescription ? (
+            <>
+              <div className="text-xs font-bold text-slate-900 truncate">
+                {activePrescription.medicineName} {activePrescription.dosage}
+              </div>
+              <div className="text-[10px] text-slate-500">
+                {activePrescription.frequency} • {activePrescription.durationDays} Days
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-xs font-semibold text-slate-400 py-0.5">
+                No active prescription
+              </div>
+              <div className="text-[10px] text-slate-400">
+                Consult doctor for meds
+              </div>
+            </>
+          )}
         </div>
 
       </div>
@@ -221,41 +310,59 @@ export const PatientDashboard: React.FC = () => {
                 <Calendar className="w-5 h-5 text-gov-navy" />
                 <h3 className="font-bold text-base text-slate-900">Upcoming Consultation</h3>
               </div>
-              <span className="text-xs font-bold bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-full border border-amber-300">
-                High Priority
-              </span>
+              {appointment && (
+                <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${
+                  appointment.urgency === 'HIGH' || appointment.urgency === 'EMERGENCY'
+                    ? 'bg-amber-100 text-amber-900 border-amber-300'
+                    : 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                }`}>
+                  {appointment.urgency}
+                </span>
+              )}
             </div>
 
-            <div className="bg-gov-ice p-4 rounded-2xl border border-blue-200 space-y-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-[11px] text-slate-500 font-semibold">Doctor Assigned</div>
-                  <div className="font-bold text-sm text-gov-navy">Dr. Rajesh Kulkarni (Medical Officer)</div>
-                  <div className="text-xs text-slate-600">PHC Kalyan Rural Telemedicine Suite</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[10px] text-slate-500 font-semibold">Token Number</div>
-                  <div className="text-xl font-black text-gov-navy font-mono">A-024</div>
-                </div>
-              </div>
+            {appointment ? (
+              <>
+                <div className="bg-gov-ice p-4 rounded-2xl border border-blue-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-[11px] text-slate-500 font-semibold">Doctor Assigned</div>
+                      <div className="font-bold text-sm text-gov-navy">{appointment.doctor?.name || 'Dr. Rajesh Kulkarni'}</div>
+                      <div className="text-xs text-slate-600">{appointment.facility?.name || 'PHC Kalyan Rural Telemedicine Suite'}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] text-slate-500 font-semibold">Token Number</div>
+                      <div className="text-xl font-black text-gov-navy font-mono">{appointment.tokenNumber}</div>
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-blue-200/60 text-xs">
-                <div>
-                  <span className="text-slate-500">Queue Position:</span> <strong className="text-slate-900">2nd in Line</strong>
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-blue-200/60 text-xs">
+                    <div>
+                      <span className="text-slate-500">Queue Position:</span> <strong className="text-slate-900">{appointment.queuePosition || 1} in Line</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Status:</span> <strong className="text-amber-700">{appointment.status}</strong>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-slate-500">Est. Wait Time:</span> <strong className="text-amber-700">~15 mins</strong>
-                </div>
-              </div>
-            </div>
 
-            <button
-              onClick={() => navigate('/teleconsult')}
-              className="w-full py-3 bg-gov-navy hover:bg-gov-blue text-white font-bold rounded-xl text-xs shadow-lg transition flex items-center justify-center gap-2"
-            >
-              <Video className="w-4 h-4 text-amber-400" />
-              <span>Join Specialist Teleconsultation Room</span>
-            </button>
+                <button
+                  onClick={() => navigate(patient?.id ? `/teleconsult?patientId=${patient.id}` : '/teleconsult')}
+                  className="w-full py-3 bg-gov-navy hover:bg-gov-blue text-white font-bold rounded-xl text-xs shadow-lg transition flex items-center justify-center gap-2"
+                >
+                  <Video className="w-4 h-4 text-amber-400" />
+                  <span>Join Teleconsultation Session</span>
+                </button>
+              </>
+            ) : (
+              <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 text-center space-y-2 text-xs">
+                <Calendar className="w-8 h-8 text-slate-400 mx-auto" />
+                <div className="font-bold text-slate-700">No Consultations Scheduled</div>
+                <p className="text-[11px] text-slate-500">
+                  You do not have any pending appointments today. Visit your village ASHA worker to schedule an OPD or telemedicine appointment.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Diagnostic Reports Summary */}
@@ -268,24 +375,35 @@ export const PatientDashboard: React.FC = () => {
               <span className="text-[11px] text-slate-500">Public Health Lab</span>
             </div>
 
-            <div className="space-y-2.5">
-              {diagnostics.map((d, idx) => (
-                <div key={idx} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1 text-xs">
-                  <div className="flex items-center justify-between font-bold">
-                    <span className="text-slate-900">{d.testName}</span>
-                    <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-mono">
-                      {d.status}
-                    </span>
+            {diagnostics.length > 0 ? (
+              <div className="space-y-2.5">
+                {diagnostics.map((d, idx) => (
+                  <div key={idx} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1 text-xs">
+                    <div className="flex items-center justify-between font-bold">
+                      <span className="text-slate-900">{d.testName}</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${
+                        d.status === 'VERIFIED'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {d.status}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600">
+                      {d.reportFindings || 'Sample processing at clinical laboratory.'}
+                    </p>
+                    <div className="text-[10px] text-gov-blue font-semibold">
+                      Verified by: {d.verifiedBy || 'Senior Lab Technician'}
+                    </div>
                   </div>
-                  <p className="text-[11px] text-slate-600">
-                    {d.reportFindings || 'Sample processing at PHC Kalyan laboratory.'}
-                  </p>
-                  <div className="text-[10px] text-gov-blue font-semibold">
-                    Verified by: {d.verifiedBy || 'Senior Lab Technician'}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-5 bg-slate-50 rounded-xl border border-slate-200 text-center text-xs text-slate-500 space-y-1">
+                <FlaskConical className="w-6 h-6 text-slate-400 mx-auto" />
+                <div>No diagnostic lab reports on file.</div>
+              </div>
+            )}
           </div>
 
         </div>
@@ -295,8 +413,12 @@ export const PatientDashboard: React.FC = () => {
           {referral ? (
             <ReferralTrackerStepper referral={referral} />
           ) : (
-            <div className="p-8 bg-white rounded-2xl border border-slate-200 text-center text-xs text-slate-500">
-              No active referrals.
+            <div className="p-8 bg-white rounded-3xl border border-slate-200 text-center space-y-2 text-xs">
+              <Layers className="w-8 h-8 text-slate-400 mx-auto" />
+              <div className="font-bold text-slate-800">No Active Referral Handover</div>
+              <p className="text-[11px] text-slate-500 max-w-md mx-auto">
+                All primary consultations are handled locally at your registered PHC. If specialist escalation is needed, real-time tracking will appear here.
+              </p>
             </div>
           )}
 
@@ -307,7 +429,7 @@ export const PatientDashboard: React.FC = () => {
                 <Pill className="w-5 h-5 text-amber-600" />
                 <div>
                   <h3 className="font-bold text-base text-slate-900">Find Medicine in Public Facilities</h3>
-                  <p className="text-xs text-slate-500">Check stock at nearby PHCs & Rural Hospitals before traveling</p>
+                  <p className="text-xs text-slate-500">Check real stock at nearby PHCs & Rural Hospitals before traveling</p>
                 </div>
               </div>
             </div>

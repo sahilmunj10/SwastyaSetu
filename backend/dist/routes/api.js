@@ -18,9 +18,11 @@ const router = (0, express_1.Router)();
 const prisma = new client_1.PrismaClient();
 // Apply auth middleware globally to extract tokens/demo roles
 router.use(authMiddleware_1.authenticate);
-// 1. Authentication & Demo
+// 1. Authentication, Sign-Up & User Profile
+router.post('/auth/register', authController_1.register);
 router.post('/auth/login', authController_1.login);
 router.get('/auth/me', authController_1.getCurrentUser);
+router.put('/auth/profile', authController_1.updateProfile);
 router.get('/auth/demo-accounts', authController_1.getDemoAccounts);
 // 2. Facilities
 router.get('/facilities', async (req, res) => {

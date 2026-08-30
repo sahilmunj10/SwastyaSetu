@@ -140,10 +140,12 @@ export const DoctorDashboard: React.FC = () => {
             <span className="text-xs font-bold bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded">
               Medical Officer Workstation
             </span>
-            <span className="text-xs text-slate-300 font-medium">PHC Kalyan Rural • Telemedicine Suite 01</span>
+            <span className="text-xs text-slate-300 font-medium">
+              {user?.facilityName || 'PHC Kalyan Rural'} • Telemedicine Suite 01
+            </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black">
-            Welcome, Dr. Rajesh Kulkarni (Medical Officer)
+            Welcome, {user?.name?.startsWith('Dr.') ? user.name : `Dr. ${user?.name || 'Medical Officer'}`} (Medical Officer)
           </h1>
           <p className="text-xs text-slate-300">
             Waiting Queue: <strong className="text-white">{queueData?.totalWaiting || 0} Citizens</strong> • In Consultation: <strong className="text-white">{queueData?.inConsultation || 0}</strong> • Completed Today: <strong className="text-white">{queueData?.completedToday || 0}</strong>
@@ -180,7 +182,13 @@ export const DoctorDashboard: React.FC = () => {
             </div>
 
             <div className="space-y-2.5 max-h-[600px] overflow-y-auto">
-              {queueItems.map((item: Appointment) => {
+              {queueItems.length === 0 ? (
+                <div className="p-8 text-center text-xs text-slate-500 space-y-2">
+                  <Calendar className="w-8 h-8 text-slate-300 mx-auto" />
+                  <div className="font-semibold text-slate-700">No patients waiting in OPD queue</div>
+                  <p className="text-[11px] text-slate-400">Queue automatically updates when frontline workers schedule consultations.</p>
+                </div>
+              ) : queueItems.map((item: Appointment) => {
                 const isSelected = selectedPatient?.id === item.patientId;
                 const isUrgent = item.urgency === 'HIGH' || item.urgency === 'EMERGENCY';
 

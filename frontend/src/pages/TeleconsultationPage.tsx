@@ -45,10 +45,29 @@ export const TeleconsultationPage: React.FC = () => {
     loadSession();
   }, [searchParams]);
 
-  if (loading || !patient) {
+  if (loading) {
     return (
-      <div className="p-12 text-center text-xs text-slate-500">
-        Initializing secure teleconsultation room...
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-12 text-center text-xs text-slate-500 space-y-3">
+        <div className="w-8 h-8 border-4 border-gov-navy border-t-transparent rounded-full animate-spin" />
+        <div>Initializing secure clinical teleconsultation room...</div>
+      </div>
+    );
+  }
+
+  if (!patient) {
+    return (
+      <div className="max-w-xl mx-auto my-12 p-8 bg-white rounded-3xl border border-slate-200 text-center space-y-4 text-xs">
+        <Video className="w-12 h-12 text-slate-400 mx-auto" />
+        <div className="text-base font-bold text-slate-800">No Patient Consultation Selected</div>
+        <p className="text-slate-500">
+          Please select an active patient from the OPD queue or citizen register to launch a video consultation.
+        </p>
+        <button
+          onClick={() => navigate('/doctor')}
+          className="px-5 py-2.5 bg-gov-navy hover:bg-gov-blue text-white font-bold rounded-xl text-xs shadow transition"
+        >
+          Return to Workstation
+        </button>
       </div>
     );
   }
