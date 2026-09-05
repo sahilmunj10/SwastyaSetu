@@ -36,17 +36,23 @@ export async function getDashboardOverview(req: Request, res: Response) {
       }
     });
 
+    // Active waiting queue calculation for dynamic wait time
+    const waitingAppts = await prisma.appointment.count({ where: { status: 'WAITING' } });
+    const dynamicWaitTime = waitingAppts > 0 ? `${Math.min(75, Math.max(10, waitingAppts * 12))} mins` : '15 mins';
+
     // Facility Scorecard & GIS enrichment
+    const todayStr = new Date().toISOString().split('T')[0];
     const facilityScorecards = facilities.map(f => {
-      const apptsToday = f.appointments.length;
+      const apptsToday = f.appointments.filter(a => a.date === todayStr).length;
       const fMedAlerts = f.medicines.filter(m => m.quantity <= m.reorderThreshold).length;
-      const fCompletedRef = f.outgoingReferrals.filter(r => ['ACCEPTED', 'CONSULTED', 'CLOSED'].includes(r.status)).length;
+      const fCompletedRef = f.outgoingReferrals.filter(r => ['ACCEPTED', 'SCHEDULED', 'ARRIVED', 'CONSULTED', 'CLOSED'].includes(r.status)).length;
       const fRefRate = f.outgoingReferrals.length > 0 
         ? Math.round((fCompletedRef / f.outgoingReferrals.length) * 100) 
-        : 90;
+        : 100;
 
-      // Simulated wait times based on facility type & load
-      let avgWaitMin = f.type === 'PHC' ? 22 : f.type === 'RURAL_HOSPITAL' ? 34 : 48;
+      // Dynamic facility wait time based on queue load
+      const facWaiting = f.appointments.filter(a => a.status === 'WAITING').length;
+      let avgWaitMin = facWaiting > 0 ? facWaiting * 12 : f.type === 'PHC' ? 15 : f.type === 'RURAL_HOSPITAL' ? 25 : 35;
 
       return {
         id: f.id,
@@ -60,40 +66,51 @@ export async function getDashboardOverview(req: Request, res: Response) {
         bedCapacity: f.bedCapacity,
         activeDoctors: f.activeDoctors,
         activeServices: JSON.parse(f.activeServices || '[]'),
-        patientsToday: apptsToday + 12,
+        patientsToday: apptsToday,
         avgWaitMin,
         referralsCount: f.outgoingReferrals.length + f.incomingReferrals.length,
         referralCompletionRate: fRefRate,
         medicineAlerts: fMedAlerts,
-        diagnosticAvailability: f.type === 'PHC' ? '92%' : '98%',
+        diagnosticAvailability: f.diagnosticRequests.length > 0 ? '98%' : '90%',
         overallQualityScore: fMedAlerts === 0 ? '94/100 (Grade A)' : '88/100 (Grade B+)'
       };
     });
 
     // Chart 1: Monthly Registrations & Teleconsults
     const monthlyTrends = [
-      { month: 'Apr', registrations: 120, teleconsults: 35, referrals: 28 },
-      { month: 'May', registrations: 185, teleconsults: 58, referrals: 44 },
-      { month: 'Jun', registrations: 240, teleconsults: 92, referrals: 68 },
-      { month: 'Jul', registrations: 310, teleconsults: 145, referrals: 102 },
-      { month: 'Aug', registrations: 390, teleconsults: 210, referrals: 142 }
+      { month: 'Apr', registrations: Math.max(5, Math.round(totalPatients * 0.4)), teleconsults: Math.max(2, Math.round(teleconsultations * 0.3)), referrals: Math.max(1, Math.round(totalReferrals * 0.3)) },
+      { month: 'May', registrations: Math.max(10, Math.round(totalPatients * 0.6)), teleconsults: Math.max(4, Math.round(teleconsultations * 0.5)), referrals: Math.max(2, Math.round(totalReferrals * 0.5)) },
+      { month: 'Jun', registrations: Math.max(15, Math.round(totalPatients * 0.8)), teleconsults: Math.max(6, Math.round(teleconsultations * 0.7)), referrals: Math.max(3, Math.round(totalReferrals * 0.8)) },
+      { month: 'Jul', registrations: totalPatients, teleconsults: teleconsultations, referrals: totalReferrals }
     ];
 
-    // Chart 2: Referral Lifecycle Funnel
+    // Chart 2: Referral Lifecycle Funnel derived from actual database records
+    const createdCount = referrals.filter(r => ['CREATED', 'SENT', 'ACCEPTED', 'SCHEDULED', 'ARRIVED', 'CONSULTED', 'CLOSED'].includes(r.status)).length;
+    const acceptedCount = referrals.filter(r => ['ACCEPTED', 'SCHEDULED', 'ARRIVED', 'CONSULTED', 'CLOSED'].includes(r.status)).length;
+    const arrivedCount = referrals.filter(r => ['ARRIVED', 'CONSULTED', 'CLOSED'].includes(r.status)).length;
+    const completedCount = referrals.filter(r => ['CONSULTED', 'CLOSED'].includes(r.status)).length;
+
     const referralFunnel = [
-      { stage: 'Created & Sent', count: totalReferrals + 42 },
-      { stage: 'Accepted at Hub', count: totalReferrals + 36 },
-      { stage: 'Specialist Seen', count: totalReferrals + 28 },
-      { stage: 'Care Completed', count: completedReferrals + 24 }
+      { stage: 'Created & Sent', count: createdCount },
+      { stage: 'Accepted at Hub', count: acceptedCount },
+      { stage: 'Specialist Seen', count: arrivedCount },
+      { stage: 'Care Completed', count: completedCount }
     ];
 
-    // Chart 3: Disease & Condition Breakdown
+    // Chart 3: Disease & Condition Breakdown derived from actual patient records
+    const allPatients = await prisma.patient.findMany({ select: { chronicConditions: true, pregnancyStatus: true } });
+    const maternalCount = allPatients.filter(p => p.pregnancyStatus || (p.chronicConditions && p.chronicConditions.toLowerCase().includes('anc'))).length;
+    const htnCount = allPatients.filter(p => p.chronicConditions && (p.chronicConditions.toLowerCase().includes('hypertension') || p.chronicConditions.toLowerCase().includes('bp'))).length;
+    const diabetesCount = allPatients.filter(p => p.chronicConditions && p.chronicConditions.toLowerCase().includes('diabet')).length;
+    const pediatricCount = allPatients.filter(p => p.chronicConditions && (p.chronicConditions.toLowerCase().includes('child') || p.chronicConditions.toLowerCase().includes('bronch') || p.chronicConditions.toLowerCase().includes('wheez'))).length;
+    const otherCount = Math.max(1, allPatients.length - (maternalCount + htnCount + diabetesCount + pediatricCount));
+
     const diseaseDistribution = [
-      { name: 'Maternal ANC & High-Risk', value: 34, color: '#ec4899' },
-      { name: 'Hypertension & NCDs', value: 28, color: '#3b82f6' },
-      { name: 'Diabetes Mellitus', value: 18, color: '#10b981' },
-      { name: 'Pediatric & Immunization', value: 12, color: '#f59e0b' },
-      { name: 'Acute Infections / Fever', value: 8, color: '#8b5cf6' }
+      { name: 'Maternal ANC & High-Risk', value: maternalCount || 1, color: '#ec4899' },
+      { name: 'Hypertension & NCDs', value: htnCount || 1, color: '#3b82f6' },
+      { name: 'Diabetes Mellitus', value: diabetesCount || 1, color: '#10b981' },
+      { name: 'Pediatric & Immunization', value: pediatricCount || 1, color: '#f59e0b' },
+      { name: 'General & Other', value: otherCount, color: '#8b5cf6' }
     ];
 
     res.json({
@@ -102,7 +119,7 @@ export async function getDashboardOverview(req: Request, res: Response) {
         activeFacilities: totalFacilities,
         teleconsultations,
         referralCompletionRate: `${referralCompletionRate}%`,
-        averageWaitingTime: '24 mins',
+        averageWaitingTime: dynamicWaitTime,
         highRiskCases: highRiskFollowups,
         pendingFollowups: pendingFollowUps,
         medicineAlerts: lowStockCount

@@ -13,6 +13,7 @@ import {
   LogOut, 
   Menu, 
   X,
+  Sparkles,
   Stethoscope,
   Activity,
   Calendar,
@@ -44,8 +45,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenVoice }) => {
     if (!user) {
       return [
         { label: 'Home', path: '/', icon: HeartHandshake },
-        { label: 'Healthcare Services', path: '/#services', icon: Layers },
-        { label: 'Sign In', path: '/login', icon: UserIcon }
+        { label: 'Health Services', path: '/#services', icon: Layers },
+        { label: "Meena's Demo Journey", path: '/meena-journey', icon: Sparkles }
       ];
     }
 

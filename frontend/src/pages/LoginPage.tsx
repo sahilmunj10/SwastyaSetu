@@ -37,7 +37,7 @@ export const LoginPage: React.FC = () => {
   const [signupRole, setSignupRole] = useState<UserRole>('DOCTOR');
   const [signupFacility, setSignupFacility] = useState('');
 
-  const [showDemoFastLogin, setShowDemoFastLogin] = useState(false);
+  const [showDemoFastLogin, setShowDemoFastLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

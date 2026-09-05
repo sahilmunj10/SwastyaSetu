@@ -4,7 +4,6 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { OfflineSyncProvider } from './contexts/OfflineSyncContext';
 import { Navbar } from './components/common/Navbar';
-import { DemoSwitcherBar } from './components/common/DemoSwitcherBar';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { AiAssistantDrawer } from './components/ai/AiAssistantDrawer';
 import { LandingPage } from './pages/LandingPage';
@@ -26,9 +25,6 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      {/* Top Testing & Simulation Bar (Only visible when user is authenticated) */}
-      <DemoSwitcherBar />
-
       {/* Main Government Health Navigation Bar */}
       <Navbar onOpenVoice={() => setAiDrawerOpen(true)} />
 

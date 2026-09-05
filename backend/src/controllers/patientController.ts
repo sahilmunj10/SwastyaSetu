@@ -142,6 +142,25 @@ export async function createPatient(req: AuthRequest, res: Response) {
       return res.status(400).json({ error: 'Name, age, gender, phone, and village are mandatory.' });
     }
 
+    const { allowDuplicate } = req.body;
+    if (!allowDuplicate && phone) {
+      const existingPatient = await prisma.patient.findFirst({
+        where: { phone: phone.trim() }
+      });
+      if (existingPatient) {
+        return res.status(409).json({
+          error: `Citizen already registered with mobile number ${phone}: ${existingPatient.name} (ID: ${existingPatient.patientId}). Pass allowDuplicate: true to confirm registration if intentional.`,
+          duplicatePatient: {
+            id: existingPatient.id,
+            patientId: existingPatient.patientId,
+            name: existingPatient.name,
+            phone: existingPatient.phone,
+            village: existingPatient.village
+          }
+        });
+      }
+    }
+
     const count = await prisma.patient.count();
     const patientId = `MH-THN-${String(10000 + count + 1).padStart(5, '0')}`;
 
@@ -197,6 +216,70 @@ export async function createPatient(req: AuthRequest, res: Response) {
   } catch (err: any) {
     console.error('Create patient error:', err);
     res.status(500).json({ error: 'Failed to create patient record.' });
+  }
+}
+
+export async function updatePatient(req: AuthRequest, res: Response) {
+  try {
+    const { id } = req.params;
+    const {
+      name,
+      age,
+      gender,
+      phone,
+      village,
+      address,
+      emergencyContact,
+      pregnancyStatus,
+      gestationalWeeks,
+      bloodGroup,
+      chronicConditions,
+      allergies,
+      facilityId
+    } = req.body;
+
+    const existing = await prisma.patient.findFirst({
+      where: { OR: [{ id }, { patientId: id }] }
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Patient not found.' });
+    }
+
+    const updated = await prisma.patient.update({
+      where: { id: existing.id },
+      data: {
+        name: name ? name.trim() : undefined,
+        age: age !== undefined ? Number(age) : undefined,
+        gender: gender || undefined,
+        phone: phone ? phone.trim() : undefined,
+        village: village || undefined,
+        address: address || undefined,
+        emergencyContact: emergencyContact || undefined,
+        pregnancyStatus: pregnancyStatus !== undefined ? !!pregnancyStatus : undefined,
+        gestationalWeeks: gestationalWeeks !== undefined ? (gestationalWeeks ? Number(gestationalWeeks) : null) : undefined,
+        bloodGroup: bloodGroup || undefined,
+        chronicConditions: chronicConditions !== undefined ? chronicConditions : undefined,
+        allergies: allergies !== undefined ? allergies : undefined,
+        facilityId: facilityId || undefined
+      },
+      include: { facility: true }
+    });
+
+    await logAuditEvent({
+      userId: req.user?.id,
+      userName: req.user?.name || 'Frontline Staff',
+      userRole: req.user?.role || 'ASHA',
+      action: 'UPDATE_PATIENT',
+      entity: 'Patient',
+      entityId: updated.id,
+      details: `Updated demographic information for patient ${updated.name} (${updated.patientId}).`
+    });
+
+    res.json({ patient: updated, message: 'Patient information updated successfully.' });
+  } catch (err: any) {
+    console.error('Update patient error:', err);
+    res.status(500).json({ error: 'Failed to update patient record.' });
   }
 }
 

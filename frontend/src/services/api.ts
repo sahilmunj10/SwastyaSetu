@@ -98,6 +98,12 @@ export const api = {
       body: JSON.stringify(patientData)
     }),
 
+  updatePatient: (id: string, patientData: any) =>
+    request<{ patient: Patient; message: string }>(`/patients/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(patientData)
+    }),
+
   addVitals: (patientId: string, vitalsData: any) =>
     request<{ vital: Vital; message: string }>(`/patients/${patientId}/vitals`, {
       method: 'POST',
