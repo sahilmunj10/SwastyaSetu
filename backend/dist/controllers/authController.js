@@ -141,12 +141,17 @@ async function login(req, res) {
         let isPasswordValid = false;
         if (password && user.passwordHash) {
             isPasswordValid = await bcryptjs_1.default.compare(password, user.passwordHash);
-            if (!isPasswordValid && (password.includes('123') || password === 'demo123' || password === 'password123' || user.email.includes('demo'))) {
-                isPasswordValid = true;
+            if (!isPasswordValid) {
+                // Accept designated demo passwords for ease of SIH demonstration
+                const expectedRolePass = `${user.role.toLowerCase()}123`;
+                const altOfficerPass = 'officer123';
+                if (password === expectedRolePass || password === altOfficerPass || password === 'demo123' || password === 'password123') {
+                    isPasswordValid = true;
+                }
             }
         }
-        else if (role || user.email.includes('demo')) {
-            // 1-click testing accounts
+        else if (!password && (role || user.email.includes('demo'))) {
+            // 1-click testing switch accounts (when password field is omitted)
             isPasswordValid = true;
         }
         if (!isPasswordValid) {
